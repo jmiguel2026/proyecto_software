@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 
 export default function Empleados() {
     const [empleados, setEmpleados] = useState([]);
@@ -8,7 +9,7 @@ export default function Empleados() {
     const cargarEmpleados = async () => {
         try {
             const res = await fetch('http://localhost:5000/api/empleados');
-            if (!res.ok) throw new Error('Error al conectar con el servidor');
+            if (!res.ok) throw new Error('Error de conexión');
             const data = await res.json();
             setEmpleados(data);
         } catch (error) {
@@ -24,6 +25,7 @@ export default function Empleados() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    // 1. Guardar Empleado con SweetAlert2
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -36,27 +38,69 @@ export default function Empleados() {
             const data = await res.json();
 
             if (!res.ok) {
-                // Si la base de datos da error, te saldrá este aviso:
-                alert('⚠️ Error de MySQL: ' + (data.error || 'No se pudo guardar'));
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al registrar',
+                    text: data.error || 'No se pudo registrar el empleado en MySQL.',
+                    confirmButtonColor: '#0f172a'
+                });
                 return;
             }
 
-            alert('✅ ¡Empleado guardado con éxito!');
+            // Alerta de éxito elegante
+            Swal.fire({
+                icon: 'success',
+                title: '¡Empleado Registrado!',
+                text: `${form.nombre} ha sido ingresado al sistema.`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+
             setForm({ nombre: '', edad: '', pais: '', cargo: '', correo: '' });
             cargarEmpleados();
         } catch (error) {
-            alert('❌ No hay conexión con el servidor (¿Está corriendo "node index.js" en el puerto 5000?)');
-            console.error(error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Sin conexión',
+                text: 'El servidor en el puerto 5000 no responde.',
+                confirmButtonColor: '#0f172a'
+            });
         }
     };
 
-    const handleEliminar = async (id) => {
-        if (window.confirm('¿Confirmar eliminación del registro?')) {
+    // 2. Eliminar Empleado con Modal de Confirmación
+    const handleEliminar = async (id, nombre) => {
+        const result = await Swal.fire({
+            title: `¿Eliminar a ${nombre}?`,
+            text: 'Esta acción borrará al empleado y sus salarios asociados de la base de datos.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
             try {
                 await fetch(`http://localhost:5000/api/empleados/${id}`, { method: 'DELETE' });
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Eliminado!',
+                    text: 'El empleado fue retirado del sistema.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
                 cargarEmpleados();
             } catch (error) {
-                console.error('Error al eliminar:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo eliminar el empleado.',
+                    confirmButtonColor: '#0f172a'
+                });
             }
         }
     };
@@ -81,7 +125,7 @@ export default function Empleados() {
                 />
             </div>
 
-            {/* FORMULARIO */}
+            {/* FORMULARIO DE REGISTRO */}
             <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                 <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>
                     Registrar Nuevo Empleado
@@ -99,7 +143,7 @@ export default function Empleados() {
                 </form>
             </div>
 
-            {/* TABLA */}
+            {/* TABLA DE EMPLEADOS */}
             <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                 <div style={{ padding: '14px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Lista de Empleados</span>
@@ -137,7 +181,9 @@ export default function Empleados() {
                                     <td style={{ padding: '12px 18px', color: '#475569' }}>{emp.pais} ({emp.edad} años)</td>
                                     <td style={{ padding: '12px 18px', color: '#64748b' }}>{emp.correo}</td>
                                     <td style={{ padding: '12px 18px', textAlign: 'right' }}>
-                                        <button onClick={() => handleEliminar(emp.id)} style={{ background: '#ffffff', border: '1px solid #fecaca', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>
+                                        <button 
+                                            onClick={() => handleEliminar(emp.id, emp.nombre)} 
+                                            style={{ background: '#ffffff', border: '1px solid #fecaca', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>
                                             Eliminar
                                         </button>
                                     </td>
