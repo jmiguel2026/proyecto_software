@@ -5,7 +5,7 @@ const db = require('../db');
  
 // 1. Obtener todos los proyectos
 router.get('/', (req, res) => {
-    db.query('SELECT * FROM proyectos', (err, results) => {
+    db.query('SELECT * FROM proyectos ORDER BY id DESC', (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
@@ -23,7 +23,7 @@ router.post('/', (req, res) => {
 });
  
  
-// 3. Asignar empleado a un proyecto (Tabla empleado_proyecto)
+// 3. Asignar empleado a un proyecto (Tabla intermedia empleado_proyecto)
 router.post('/asignar', (req, res) => {
     const { empleado_id, proyecto_id } = req.body;
     const sql = 'INSERT INTO empleado_proyecto (empleado_id, proyecto_id) VALUES (?, ?)';
@@ -34,7 +34,7 @@ router.post('/asignar', (req, res) => {
 });
  
  
-// 4. Eliminar un proyecto por ID
+// 4. Eliminar proyecto
 router.delete('/:id', (req, res) => {
     const { id } = req.params;
     db.query('DELETE FROM proyectos WHERE id = ?', [id], (err) => {
