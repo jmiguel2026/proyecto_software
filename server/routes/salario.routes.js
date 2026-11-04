@@ -3,12 +3,13 @@ const router = express.Router();
 const db = require('../db');
  
  
-// 1. Obtener todos los salarios (con el nombre del empleado asociado)
+// 1. Obtener todos los salarios vinculados al nombre del empleado
 router.get('/', (req, res) => {
     const sql = `
         SELECT s.id, s.empleado_id, e.nombre AS empleado_nombre, s.monto, DATE_FORMAT(s.fecha_actualizacion, '%Y-%m-%d') AS fecha_actualizacion
         FROM salario s
         JOIN empleado e ON s.empleado_id = e.id
+        ORDER BY s.id DESC
     `;
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -17,7 +18,7 @@ router.get('/', (req, res) => {
 });
  
  
-// 2. Registrar salario de un empleado
+// 2. Registrar nuevo salario
 router.post('/', (req, res) => {
     const { empleado_id, monto, fecha_actualizacion } = req.body;
     const sql = 'INSERT INTO salario (empleado_id, monto, fecha_actualizacion) VALUES (?, ?, ?)';
@@ -34,12 +35,12 @@ router.post('/', (req, res) => {
 });
  
  
-// 3. Eliminar registro de salario
+// 3. Eliminar registro salarial
 router.delete('/:id', (req, res) => {
     const { id } = req.params;
     db.query('DELETE FROM salario WHERE id = ?', [id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Registro de salario eliminado' });
+        res.json({ message: 'Registro salarial eliminado con éxito' });
     });
 });
  
