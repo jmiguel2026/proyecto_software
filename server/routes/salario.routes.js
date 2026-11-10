@@ -36,6 +36,22 @@ router.post('/', (req, res) => {
     });
 });
 
+// ACTUALIZAR SALARIO (Aumento de Sueldo por el Administrador)
+router.put('/:id', (req, res) => {
+    const { id } = req.params;
+    const { monto, fecha_actualizacion } = req.body;
+
+    if (!monto || !fecha_actualizacion) {
+        return res.status(400).json({ error: 'Monto y fecha son requeridos' });
+    }
+
+    const sql = 'UPDATE salario SET monto = ?, fecha_actualizacion = ? WHERE id = ?';
+    db.query(sql, [monto, fecha_actualizacion, id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Salario actualizado exitosamente' });
+    });
+});
+
 // Eliminar salario
 router.delete('/:id', (req, res) => {
     const { id } = req.params;

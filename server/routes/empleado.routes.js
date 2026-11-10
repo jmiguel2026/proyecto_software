@@ -2,11 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// RUTA DE LOGIN (Admin o Empleado)
+// RUTA DE LOGIN
 router.post('/login', (req, res) => {
     const { usuario, password } = req.body;
 
-    // 1. Validar si es el Administrador
     if (usuario === 'ADMINTECH' && password === 'EmpresaTech123') {
         return res.json({
             rol: 'admin',
@@ -15,7 +14,6 @@ router.post('/login', (req, res) => {
         });
     }
 
-    // 2. Si no es admin, buscar en la tabla empleado
     const sql = 'SELECT id, nombre, cargo, usuario FROM empleado WHERE (usuario = ? OR correo = ?) AND password = ?';
     db.query(sql, [usuario, usuario, password], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -43,7 +41,7 @@ router.get('/', (req, res) => {
     });
 });
 
-// Guardar empleado con usuario y contraseña
+// Guardar empleado
 router.post('/', (req, res) => {
     const { nombre, edad, pais, cargo, correo, usuario, password } = req.body;
     const sql = 'INSERT INTO empleado (nombre, edad, pais, cargo, correo, usuario, password) VALUES (?, ?, ?, ?, ?, ?, ?)';
@@ -51,6 +49,22 @@ router.post('/', (req, res) => {
     db.query(sql, [nombre, edad, pais, cargo, correo, usuario, password], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: result.insertId, nombre, cargo, usuario });
+    });
+});
+
+// ACTUALIZAR CREDENCIALES (Usuario o Contraseña por el Administrador)
+router.put('/:id/credenciales', (req, res) => {
+    const { id } = req.params;
+    const { usuario, password } = req.body;
+
+    if (!usuario || !password) {
+        return res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
+    }
+
+    const sql = 'UPDATE empleado SET usuario = ?, password = ? WHERE id = ?';
+    db.query(sql, [usuario, password, id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Credenciales actualizadas exitosamente' });
     });
 });
 
