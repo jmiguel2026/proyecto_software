@@ -26,6 +26,7 @@ export default function Empleados() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    // Crear Empleado
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -50,7 +51,7 @@ export default function Empleados() {
             Swal.fire({
                 icon: 'success',
                 title: '¡Empleado Creado!',
-                text: `${form.nombre} ahora puede iniciar sesión con el usuario: ${form.usuario}`,
+                text: `${form.nombre} ahora puede iniciar sesión con: ${form.usuario}`,
                 timer: 2500,
                 showConfirmButton: false
             });
@@ -62,6 +63,63 @@ export default function Empleados() {
         }
     };
 
+    // MODAL PARA ACTUALIZAR CREDENCIALES (Usuario y Contraseña)
+    const handleEditarCredenciales = async (emp) => {
+        const { value: formValues } = await Swal.fire({
+            title: `Modificar Acceso de ${emp.nombre}`,
+            html: `
+                <div style="text-align: left; font-size: 13px; font-family: sans-serif;">
+                    <p style="color: #64748b; margin-bottom: 12px;">Ingresa el nuevo nombre de usuario y/o contraseña en caso de olvido.</p>
+                    <label style="font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Nombre de Usuario:</label>
+                    <input id="swal-input-user" class="swal2-input" value="${emp.usuario || ''}" style="margin: 0 0 14px 0; width: 100%; box-sizing: border-box; font-size: 13px;">
+                    <label style="font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Nueva Contraseña:</label>
+                    <input id="swal-input-pass" type="password" class="swal2-input" placeholder="Nueva contraseña" style="margin: 0; width: 100%; box-sizing: border-box; font-size: 13px;">
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar Cambios',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0f172a',
+            cancelButtonColor: '#64748b',
+            preConfirm: () => {
+                const user = document.getElementById('swal-input-user').value;
+                const pass = document.getElementById('swal-input-pass').value;
+                if (!user || !pass) {
+                    Swal.showValidationMessage('Debes ingresar usuario y contraseña');
+                    return false;
+                }
+                return { usuario: user, password: pass };
+            }
+        });
+
+        if (formValues) {
+            try {
+                const res = await fetch(`http://localhost:5000/api/empleados/${emp.id}/credenciales`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formValues)
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Acceso Actualizado!',
+                    text: `Nuevas credenciales para ${emp.nombre} guardadas con éxito.`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+                cargarEmpleados();
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: error.message, confirmButtonColor: '#0f172a' });
+            }
+        }
+    };
+
+    // Eliminar Empleado
     const handleEliminar = async (id, nombre) => {
         const result = await Swal.fire({
             title: `¿Eliminar a ${nombre}?`,
@@ -111,10 +169,8 @@ export default function Empleados() {
                     <input name="pais" placeholder="País" value={form.pais} onChange={handleChange} required style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none' }} />
                     <input name="cargo" placeholder="Cargo" value={form.cargo} onChange={handleChange} required style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none' }} />
                     <input name="correo" placeholder="Correo" type="email" value={form.correo} onChange={handleChange} required style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none' }} />
-                    
-                    {/* Campos de Login para el Empleado */}
-                    <input name="usuario" placeholder="Nombre de Usuario (Login)" value={form.usuario} onChange={handleChange} required style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none' }} />
-                    <input name="password" placeholder="Contraseña de acceso" type="password" value={form.password} onChange={handleChange} required style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none' }} />
+                    <input name="usuario" placeholder="Nombre de Usuario" value={form.usuario} onChange={handleChange} required style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none' }} />
+                    <input name="password" placeholder="Contraseña inicial" type="password" value={form.password} onChange={handleChange} required style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none' }} />
 
                     <button type="submit" style={{ background: '#0f172a', color: '#ffffff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                         + Guardar y Crear Acceso
@@ -136,7 +192,7 @@ export default function Empleados() {
                             <th style={{ padding: '12px 18px', fontWeight: '600' }}>Usuario</th>
                             <th style={{ padding: '12px 18px', fontWeight: '600' }}>Cargo</th>
                             <th style={{ padding: '12px 18px', fontWeight: '600' }}>Correo</th>
-                            <th style={{ padding: '12px 18px', fontWeight: '600', textAlign: 'right' }}>Acción</th>
+                            <th style={{ padding: '12px 18px', fontWeight: '600', textAlign: 'right' }}>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -148,7 +204,20 @@ export default function Empleados() {
                                 <td style={{ padding: '12px 18px' }}><span style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #e2e8f0', padding: '3px 8px', borderRadius: '4px', fontSize: '11px' }}>{emp.cargo}</span></td>
                                 <td style={{ padding: '12px 18px', color: '#64748b' }}>{emp.correo}</td>
                                 <td style={{ padding: '12px 18px', textAlign: 'right' }}>
-                                    <button onClick={() => handleEliminar(emp.id, emp.nombre)} style={{ background: '#ffffff', border: '1px solid #fecaca', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}>Eliminar</button>
+                                    
+                                    {/* BOTÓN PARA CAMBIAR CREDENCIALES */}
+                                    <button 
+                                        onClick={() => handleEditarCredenciales(emp)} 
+                                        style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', marginRight: '6px' }}>
+                                        Credenciales
+                                    </button>
+
+                                    {/* BOTÓN ELIMINAR */}
+                                    <button 
+                                        onClick={() => handleEliminar(emp.id, emp.nombre)} 
+                                        style={{ background: '#ffffff', border: '1px solid #fecaca', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}>
+                                        Eliminar
+                                    </button>
                                 </td>
                             </tr>
                         ))}

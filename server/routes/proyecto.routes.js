@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// 1. Obtener proyectos (Estrictamente filtrados para empleados)
+// 1. Obtener proyectos (Admin ve el empleado asignado; Empleado ve solo los suyos)
 router.get('/', (req, res) => {
     const { empleado_id } = req.query;
 
     if (empleado_id) {
-        // SOLO proyectos asignados a este empleado en la tabla intermedia
+        // Para el Empleado: solo proyectos donde su ID esté vinculado
         const sql = `
             SELECT 
                 p.id, 
@@ -24,15 +24,19 @@ router.get('/', (req, res) => {
             res.json(results);
         });
     } else {
-        // Administrador: ve todos
+        // Para el Administrador: muestra el proyecto y el NOMBRE del empleado asignado
         const sql = `
             SELECT 
-                id, 
-                nombre_proyecto, 
-                descripcion, 
-                DATE_FORMAT(fecha_entrega, '%d/%m/%Y') AS fecha_entrega
-            FROM proyectos
-            ORDER BY id DESC
+                p.id, 
+                p.nombre_proyecto, 
+                p.descripcion, 
+                DATE_FORMAT(p.fecha_entrega, '%d/%m/%Y') AS fecha_entrega,
+                COALESCE(GROUP_CONCAT(e.nombre SEPARATOR ', '), 'Sin asignar') AS empleado_asignado
+            FROM proyectos p
+            LEFT JOIN empleado_proyecto ep ON p.id = ep.proyecto_id
+            LEFT JOIN empleado e ON ep.empleado_id = e.id
+            GROUP BY p.id
+            ORDER BY p.id DESC
         `;
         db.query(sql, (err, results) => {
             if (err) return res.status(500).json({ error: err.message });
@@ -41,7 +45,7 @@ router.get('/', (req, res) => {
     }
 });
 
-// 2. Crear proyecto con fecha de entrega garantizada
+// 2. Crear proyecto con fecha de entrega
 router.post('/', (req, res) => {
     const nombre_proyecto = req.body.nombre_proyecto || req.body.nombre;
     const descripcion = req.body.descripcion;

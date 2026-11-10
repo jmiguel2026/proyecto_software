@@ -58,7 +58,7 @@ export default function Login({ onLogin }) {
                 </div>
 
                 <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px 0' }}>Bienvenido de nuevo</h2>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 32px 0' }}>Ingresa tus credenciales para acceder a la bóveda</p>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 32px 0' }}>Ingresa tus credenciales para acceder al Panel Administrativo</p>
 
                 <form onSubmit={handleSubmit} style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '18px' }}>
                     <div>

@@ -11,7 +11,6 @@ export default function Proyectos({ usuario }) {
 
     const cargarProyectos = async () => {
         try {
-            // Si es empleado, pide estrictamente sus proyectos por ID
             const url = esAdmin 
                 ? 'http://localhost:5000/api/proyectos'
                 : `http://localhost:5000/api/proyectos?empleado_id=${usuario.id}`;
@@ -31,7 +30,7 @@ export default function Proyectos({ usuario }) {
         }
     }, [usuario]);
 
-    // Crear Proyecto (Admin)
+    // Crear Proyecto
     const handleCrearProyecto = async (e) => {
         e.preventDefault();
         try {
@@ -59,7 +58,7 @@ export default function Proyectos({ usuario }) {
         }
     };
 
-    // Asignar Empleado (Admin)
+    // Asignar Empleado a Proyecto
     const handleAsignar = async (e) => {
         e.preventDefault();
         try {
@@ -80,18 +79,19 @@ export default function Proyectos({ usuario }) {
                 return;
             }
 
-            Swal.fire({ icon: 'success', title: '¡Asignado!', text: 'El empleado ya puede ver este proyecto en su panel.', timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: '¡Asignado!', text: 'El proyecto fue asignado al empleado.', timer: 2000, showConfirmButton: false });
             setAsignacion({ empleado_id: '', proyecto_id: '' });
+            cargarProyectos(); // Recarga la tabla de inmediato para mostrar el nombre asignado
         } catch (error) {
             Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo conectar al servidor.', confirmButtonColor: '#0f172a' });
         }
     };
 
-    // Eliminar Proyecto (Admin)
+    // Eliminar Proyecto
     const handleEliminar = async (id) => {
         const result = await Swal.fire({
             title: '¿Eliminar proyecto?',
-            text: 'Se eliminará el proyecto y las asignaciones de los empleados.',
+            text: 'Se eliminará el proyecto y su asignación.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
@@ -109,7 +109,8 @@ export default function Proyectos({ usuario }) {
 
     const filtrados = proyectos.filter(p => 
         (p.nombre_proyecto && p.nombre_proyecto.toLowerCase().includes(busqueda.toLowerCase())) ||
-        (p.descripcion && p.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
+        (p.descripcion && p.descripcion.toLowerCase().includes(busqueda.toLowerCase())) ||
+        (p.empleado_asignado && p.empleado_asignado.toLowerCase().includes(busqueda.toLowerCase()))
     );
 
     return (
@@ -120,18 +121,18 @@ export default function Proyectos({ usuario }) {
                 <svg width="16" height="16" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24" style={{ marginRight: '10px' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input 
                     type="text" 
-                    placeholder="Buscar por nombre de proyecto o palabras de la descripción..." 
+                    placeholder="Buscar por proyecto, descripción o empleado asignado..." 
                     value={busqueda} 
                     onChange={e => setBusqueda(e.target.value)} 
                     style={{ background: 'transparent', border: 'none', color: '#0f172a', width: '100%', fontSize: '13px', outline: 'none' }} 
                 />
             </div>
 
-            {/* SECCIÓN SOLO ADMINISTRADOR: FORMULARIOS */}
+            {/* SECCIÓN ADMINISTRADOR: FORMULARIOS */}
             {esAdmin && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '28px' }}>
                     
-                    {/* Crear Proyecto con Caja Grande */}
+                    {/* Crear Proyecto */}
                     <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                         <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>
                             Registrar Nuevo Proyecto
@@ -144,17 +145,14 @@ export default function Proyectos({ usuario }) {
                                 required 
                                 style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none' }} 
                             />
-                            
-                            {/* CAJA GRANDE PARA DESCRIPCIÓN DETALLADA */}
                             <textarea 
                                 placeholder="Escribe aquí todas las instrucciones y detalles completos del proyecto..." 
-                                rows="5"
+                                rows="4"
                                 value={form.descripcion} 
                                 onChange={e => setForm({ ...form, descripcion: e.target.value })} 
                                 required 
                                 style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none', resize: 'vertical', lineHeight: '1.5' }} 
                             />
-
                             <div>
                                 <label style={{ fontSize: '11px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>Fecha Límite de Entrega:</label>
                                 <input 
@@ -165,7 +163,6 @@ export default function Proyectos({ usuario }) {
                                     style={{ width: '100%', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} 
                                 />
                             </div>
-
                             <button type="submit" style={{ background: '#0f172a', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', marginTop: '4px' }}>
                                 + Crear Proyecto
                             </button>
@@ -177,7 +174,7 @@ export default function Proyectos({ usuario }) {
                         <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>
                             Asignar Proyecto a Empleado
                         </div>
-                        <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 14px 0' }}>El proyecto solo será visible para el empleado que ingreses aquí.</p>
+                        <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 14px 0' }}>Ingresa los IDs para vincular quién se hará cargo del proyecto.</p>
                         
                         <form onSubmit={handleAsignar} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <input 
@@ -205,7 +202,7 @@ export default function Proyectos({ usuario }) {
                 </div>
             )}
 
-            {/* VISTA DEL EMPLEADO: TARJETAS AMPLIAS Y CÓMODAS PARA LEER */}
+            {/* VISTA DEL EMPLEADO: TARJETAS AMPLIAS */}
             {!esAdmin ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                     <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>
@@ -242,7 +239,7 @@ export default function Proyectos({ usuario }) {
                     )}
                 </div>
             ) : (
-                /* TABLA GENERAL PARA EL ADMINISTRADOR */
+                /* TABLA GENERAL DEL ADMINISTRADOR (CON LA COLUMNA DE EMPLEADO ASIGNADO) */
                 <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <div style={{ padding: '14px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Directorio General de Proyectos</span>
@@ -253,9 +250,10 @@ export default function Proyectos({ usuario }) {
                         <thead>
                             <tr style={{ background: '#f8fafc', color: '#475569', borderBottom: '1px solid #e2e8f0' }}>
                                 <th style={{ padding: '12px 18px', width: '50px' }}>ID</th>
-                                <th style={{ padding: '12px 18px', width: '200px' }}>Nombre</th>
+                                <th style={{ padding: '12px 18px', width: '180px' }}>Nombre Proyecto</th>
+                                <th style={{ padding: '12px 18px', width: '160px' }}>Empleado a Cargo</th>
                                 <th style={{ padding: '12px 18px' }}>Descripción</th>
-                                <th style={{ padding: '12px 18px', width: '140px' }}>Fecha Entrega</th>
+                                <th style={{ padding: '12px 18px', width: '120px' }}>Fecha Entrega</th>
                                 <th style={{ padding: '12px 18px', textAlign: 'right', width: '80px' }}>Acción</th>
                             </tr>
                         </thead>
@@ -264,6 +262,20 @@ export default function Proyectos({ usuario }) {
                                 <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                     <td style={{ padding: '12px 18px', color: '#64748b' }}>#{p.id}</td>
                                     <td style={{ padding: '12px 18px', fontWeight: '600', color: '#0f172a' }}>{p.nombre_proyecto}</td>
+                                    
+                                    {/* COLUMNA NUEVA: NOMBRE DEL EMPLEADO ASIGNADO */}
+                                    <td style={{ padding: '12px 18px' }}>
+                                        {p.empleado_asignado === 'Sin asignar' ? (
+                                            <span style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600' }}>
+                                                Sin asignar
+                                            </span>
+                                        ) : (
+                                            <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}>
+                                                👤 {p.empleado_asignado}
+                                            </span>
+                                        )}
+                                    </td>
+
                                     <td style={{ padding: '12px 18px', color: '#475569', lineHeight: '1.5' }}>{p.descripcion}</td>
                                     <td style={{ padding: '12px 18px', fontWeight: '600', color: '#0f172a' }}>{p.fecha_entrega || 'Sin fecha'}</td>
                                     <td style={{ padding: '12px 18px', textAlign: 'right' }}>
